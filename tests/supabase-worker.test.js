@@ -55,3 +55,33 @@ test('health does not claim database connectivity',async()=>{
   const r=await handle(new Request('https://worker.invalid/health'),{},()=>{throw Error('must not call');});
   assert.equal((await r.json()).database_connection_verified,false);
 });
+test('oversized streamed request is cancelled before any database call',async()=>{
+  let cancelled=false, called=false;
+  const body=new ReadableStream({
+    start(c){ c.enqueue(new Uint8Array(2049)); },
+    cancel(){ cancelled=true; }
+  });
+  const request=new Request('https://worker.invalid/orders',{
+    method:'POST',headers:{Authorization:'Bearer test-worker-token','Content-Type':'application/json'},
+    body,duplex:'half'
+  });
+  const result=await handle(request,env,async()=>{called=true;throw Error('must not call');});
+  assert.equal(result.status,413);
+  assert.equal((await result.json()).error.code,'BODY_TOO_LARGE');
+  assert.equal(cancelled,true);assert.equal(called,false);
+});
+test('oversized database response is cancelled and never accepted as a save',async()=>{
+  let cancelled=false;
+  const response=new Response(new ReadableStream({
+    start(c){c.enqueue(new Uint8Array(16385));},cancel(){cancelled=true;}
+  }));
+  const result=await handle(req('/orders',{}),env,async()=>response);
+  assert.equal(result.status,503);assert.equal(cancelled,true);
+  assert.match((await result.json()).error.message,/unverified/);
+});
+test('unused database HTTP error body is cancelled',async()=>{
+  let cancelled=false;
+  const response=new Response(new ReadableStream({cancel(){cancelled=true;}}),{status:504});
+  const result=await handle(req('/orders',{}),env,async()=>response);
+  assert.equal(result.status,503);assert.equal(cancelled,true);
+});

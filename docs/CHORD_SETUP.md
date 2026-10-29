@@ -1,6 +1,6 @@
 # Connect the demo API to Chord
 
-Do not fill in a fictional hostname. Deploy first and use the exact returned Worker URL, represented below as BASE. The candidate successfully used OpenAPI import, then added Authorization to each of the three imported connections. The final deployment uses Supabase PostgreSQL; subsequent writes were checked with hosted SQL queries.
+Do not fill in a fictional hostname. Deploy first and use the exact returned Worker URL, represented below as BASE. I used OpenAPI import, then added Authorization to each of the three imported connections. The final deployment uses Supabase PostgreSQL; subsequent writes were checked with hosted SQL queries.
 
 Create these three connections in Admin > Channels & Tools > Tools > Custom tools (API). For each, add the header `Authorization` with value `Bearer YOUR_DEMO_API_TOKEN`. Use the demo-service secret you generated locally. Keep it out of skill files, screenshots, OpenAPI files and the repository. If the form offers a protected secret field, use it. Check whether the saved credential is masked before sharing screenshots.
 

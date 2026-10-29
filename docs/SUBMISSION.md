@@ -1,42 +1,77 @@
-# Role preference: Analytics Engineering
+# Analytics Engineering
 
-Thrift Nest is an online thrift clothing business owned by a friend of mine, selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
+## 1 Role preference and problem statement
 
-## Working agent
+Thrift Nest is an online thrift clothing business owned by a friend of mine and sells through Instagram and WhatsApp. The owner spends time repeating product details and tracking purchase requests across chats; my Chord agent answers item enquiries and saves a confirmed, unpaid request in PostgreSQL. The owner would consider paying if it saved time and reduced missed sales or order errors, but I have not measured those benefits yet. I left out payments, stock reservation, Instagram updates, dispatch and reminders.
 
-**Thrift Nest Order Assistant**, built on Chord with the custom **Thrift Nest Order Handling** skill. Latest inspected published version: v8, SKILL (1).md marked Instructions. The repository uses SKILL.md as its canonical filename.
+## 2 Working agent
+
+Thrift Nest Order Assistant runs on Chord with my Thrift Nest Order Handling skill. The latest inspected version was v8. All operational data is fictional.
 
 Simulator: https://chat.tsglabs.dev/c/TjEWRNfXvhPO0UxU3kzbeZLI
 
-The teammate and integration are intended to remain available for simulator review. All operational data is fictional.
+## 3 Code
 
-## Code
+GitHub: https://github.com/Fuddie/thrift-nest-chord
 
-Repository: https://github.com/Fuddie/thrift-nest-chord
+The repo includes the skill, API code, PostgreSQL scripts, fictional fixtures, tests and README. Chord calls the Cloudflare API to read products, save a pending request and retrieve it. I checked saved records separately in Supabase and DBeaver.
 
-Includes the skill, custom Worker API, PostgreSQL schema and operations, fictional catalogue fixtures, tests, OpenAPI contract and setup instructions. README includes the AI-use disclosure.
+AI use: ChatGPT/Codex helped with the skill, code, tests, troubleshooting and writing. I configured and deployed the service, connected Chord, ran the conversations and database checks, and recorded the demo.
 
-## Screen recording
+## 4 Recording
 
 https://www.loom.com/share/fb9b9580a6564d639bbef2b03889834c
 
+## 5 Deployment field notes
+
+## A saved request was missing from PostgreSQL
+
+**What happened:** On 29 October, the agent said DEMO-VIDEO-PG003 / TN-DEMO-105 was saved and quoted TN-d8b1d4ed-8dd9-4a4f-bd1f-1fa8a6bb7d17. Queries by ID and customer/item found no row. A separate Supabase query agreed.
+
+**How I investigated:** The agent initially admitted it had not checked again. I enabled Wrangler logs and requested a fresh lookup. A GET /orders appeared and the agent reported no record. I did not capture the original write attempt, so I cannot identify its exact failure.
+
+**What I changed:** I required a successful create response followed by a matching lookup. Retrying the same pair produced POST and GET logs and a real row, TN-e4500274-f7d9-458f-a591-09aa232fab97, at NGN 13,200, pending/unverified. Later PG005 also matched SQL. Recovery worked; I do not claim the instruction change prevents every false confirmation.
+
+**What Chord could improve:** Link every saved-order claim to the actual tool result. Show the request ID, sanitized arguments, response, HTTP status and skill version in one place.
+
+## Manual requests worked but agent requests failed
+
+**What happened:** On 27 October, with the earlier D1 backend, agent requests returned HTTP 400, INVALID_BODY and UNEXPECTED_FIELD. Lookup and SQL showed no order.
+
+**How I investigated:** A manual Chord request with all four required fields returned 201 Created. My first skill signature listed only two fields. The failed request body was not captured, so the exact malformed field remains unknown.
+
+**What I changed:** I documented all four fields, correct JSON types and prices in kobo, keeping strict backend validation. Later agent writes matched external records. These were D1 checks, before the PostgreSQL migration.
+
+**What Chord could improve:** Generate an example from the tool schema and show sanitized submitted fields beside validation errors. I also need to keep the skill and API contract aligned.
+
+## The simulator stopped before answering
+
+**What happened:** On 29 October, PG008 displayed “The agent didn't answer. Try sending again.” Chord showed retry messages without the product answer.
+
+**How I investigated:** Wrangler recorded four product GETs between 16:33 and 16:37 Lagos time. Each said Ok, which does not prove the HTTP response was successful. The Activity panel showed usage/setup events, and I did not obtain the failed response body.
+
+**Workaround and limitation:** I stopped repeated retries and looked for more detailed logs. I later completed the recording, but no specific fix or root cause was established. This remains unresolved.
+
+**What Chord could improve:** Put a run ID and diagnostic link on simulator errors, distinguishing API errors, model timeouts and delivery failures.
+
+## Other limits
+
+The agent still sometimes asks for a second yes. Rewriting the confirmation steps and checking published v8 did not establish a fix, so I kept the working two-confirmation flow. The owner described the wider problem, but I did not establish a dated incident, handling-time baseline or measured sales impact.
 
 
-## Deployment field notes
+## 6 Go live note for Thrift Nest
 
-See FIELD_NOTES.md for three specific incidents: an unsupported saved-order confirmation, malformed agent POST requests, and simulator replies failing despite API requests. Each includes evidence, diagnosis limits, attempted fixes, resolution or remaining limitation, and product feedback. The extra confirmation is documented separately as a remaining usability limitation.
+The assistant answers questions about an item and saves an unpaid purchase request after confirmation. It can find the existing request when a customer asks again. Only payment secures an item; this request does not reserve stock. The demo uses fictional products and customer references.
 
-## Go-live note
+It cannot take or verify payments, arrange delivery, update Instagram or alert staff. The extra confirmation prompt and an earlier false save confirmation need further reliability testing before customer use.
 
-The assistant answers item-code enquiries using the connected catalogue and records a confirmed, unpaid purchase request. Repeated enquiries can retrieve the existing request. A pending request does not reserve an item: only payment secures it. The current demonstration uses fictional products and customer references and has been checked against hosted PostgreSQL records.
+Before launch, someone must maintain prices and stock, connect an approved WhatsApp business number, and set up customer identity and staff permissions. Payment support needs secure live credentials, verified payment events and rules for failed payments, competing buyers and refunds. No verified payment means no reservation or dispatch.
 
-It does not accept or verify payments, update Instagram, arrange dispatch, send reminders or alert staff automatically. Delivery, returns and missing measurements still need an owner response. The agent has produced an unsupported save confirmation during testing; subsequent checks helped recover, but reliability needs further testing. It also sometimes asks for an extra confirmation.
-
-Before real customers use it, agree who maintains prices and availability, connect an approved WhatsApp business number, replace fictional references with authenticated customer identity, and define access controls and data retention. Payment integration would require securely stored live provider credentials, verified payment events, and rules for failed or delayed payments, competing buyers and refunds. An unverified or failed payment must never secure stock or trigger dispatch.
-
-Nominate an owner or staff member to handle unclear requests and service failures, and implement and test an alert to that person; no automated alert exists today. Run a small supervised pilot and reconcile every saved request. Measure owner handling time and errors before and during the pilot before deciding whether the service saves enough effort to justify its cost.
+Choose a staff contact for questions and failures, then build and test alerts to that person. Start with a supervised pilot, check saved requests against the database, and compare handling time and errors before deciding whether it is worth paying for.
 
 
-## Discovery and evidence limits
+## Checks and remaining work
 
-The owner described the process, its administrative consequences and conditions under which a solution could be worth paying for. A dated critical incident, measured handling-time baseline and quantified willingness to pay were not established. The implementation hypothesis is that product retrieval plus a persistent pending-request record can reduce manual effort. No savings or conversion uplift is claimed. Current process: enquiry -> identify item -> check details/availability -> answer questions -> confirm intent/payment manually -> arrange dispatch. The demo ends at confirmed unpaid intent, before payment and fulfilment.
+The local suite passes 20 tests: nine for the earlier SQLite service and eleven for the PostgreSQL Worker using simulated HTTP responses. Hosted SQL checks and specific simulator runs are recorded in docs/ACCEPTANCE.md. These tests do not establish production reliability or measured business impact.
+
+A final code review added limits while reading request and response bodies and cleanup of unused responses and timers. This update is tested locally but still needs deployment and a fresh simulator check. See docs/RESOURCE_REVIEW.md. No long-running memory profile, hosted load test or connection-pool saturation test was run.

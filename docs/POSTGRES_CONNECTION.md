@@ -1,6 +1,6 @@
 # PostgreSQL deployment and connection
 
-The candidate deployed this backend and independently queried saved requests in
+I deployed this backend and independently queried saved requests in
 Supabase and DBeaver. See ACCEPTANCE.md for exact evidence and untested cases.
 
 ## Database
@@ -10,7 +10,7 @@ api/supabase_01_tables.sql, then api/supabase_02_operations.sql in a new query.
 The latter should return a successful product JSON for TN-DEMO-001 and zero
 orders on a fresh project. Then run api/supabase_03_checks.sql. It tests as
 service_role and rolls back its test writes; a raised exception is a failed test.
-These SQL scripts were run by the candidate in Supabase; the checks completion
+These SQL scripts were run by me in Supabase; the checks completion
 message was observed. They were not executed in the assistant runtime.
 
 The custom thrift_demo schema is private to the backend role, with RLS enabled.

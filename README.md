@@ -2,39 +2,37 @@
 
 **Role preference: Analytics Engineering**
 
-Thrift Nest is an online thrift clothing business owned by a friend of mine, selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
+Thrift Nest is an online thrift clothing business owned by a friend of mine and sells through Instagram and WhatsApp. The owner spends time repeating product details and tracking purchase requests across chats; my Chord agent answers item enquiries and saves a confirmed, unpaid request in PostgreSQL. The owner would consider paying if it saved time and reduced missed sales or order errors, but I have not measured those benefits yet. I left out payments, stock reservation, Instagram updates, dispatch and reminders.
 
-## Demo and scope
+- [Try the simulator](https://chat.tsglabs.dev/c/TjEWRNfXvhPO0UxU3kzbeZLI)
+- [Watch the demo](https://www.loom.com/share/fb9b9580a6564d639bbef2b03889834c)
+- [Submission and field notes](docs/SUBMISSION.md)
 
-- Agent: Thrift Nest Order Assistant; latest inspected skill v8 on 29 October 2026.
-- Simulator: https://chat.tsglabs.dev/c/TjEWRNfXvhPO0UxU3kzbeZLI
-- Recording: https://www.loom.com/share/fb9b9580a6564d639bbef2b03889834c
-- API: https://thrift-nest-demo-api.fuddiebiola.workers.dev
-- Final backend: Supabase PostgreSQL, queried independently through Supabase SQL Editor and DBeaver.
+## What it does
 
-Chord runs the conversation and skill. Three custom HTTP operations connect through a Cloudflare Worker to a restricted PostgreSQL RPC: product lookup, pending-request creation and pending-request retrieval. This is a hosted mock business system containing fictional operational data, not the owner's production stock or sales. The separate local Instagram screenshot analysis database is not connected or synchronised.
+Chord runs the conversation and skill. Three custom tools call a Cloudflare Worker to look up an item, save an unpaid pending request and retrieve it. Supabase hosts PostgreSQL, and I use Supabase SQL Editor or DBeaver to verify saved records. The demo does not use real customer data or live payments. Only payment secures an item; a pending request never reserves stock.
 
-Verified examples and failures are in docs/ACCEPTANCE.md. The candidate reported completing the recording; the assistant could not access the Loom video. Code repository: https://github.com/Fuddie/thrift-nest-chord . The extra confirmation and a simulator no-answer incident remain documented limitations. No production-readiness, time-saving or sales-uplift claim is made.
+The agent sometimes asks for a second confirmation. Testing also exposed a false save confirmation and a simulator reply failure. [Field notes](docs/FIELD_NOTES.md) explain what I checked and what remains unresolved. No time savings or sales uplift has been measured.
 
-## Reproduce
+## Try it
 
-1. Open the simulator with exercise access. Use a fresh fictional reference, e.g. DEMO-REVIEW001. Ask for TN-DEMO-105's price and waist measurement. Expected fixture: NGN13,200, waist36 inches.
-2. Explicitly confirm an unpaid pending request. The observed flow sometimes asks for a second confirmation; respond once more if requested.
-3. Use docs/DEMO_QUERIES.sql against the SAME hosted project to match the saved order ID, customer, item, amount and pending/unverified status. Repeat the request and check that exactly one matching record remains.
-4. Try sold TN-DEMO-002. Expected: no new request. Record actual observations instead of assuming the expected outcome passed.
+1. Use a fresh fictional reference such as DEMO-REVIEW001. Ask about TN-DEMO-105. The fixture is NGN 13,200 with a 36-inch waist.
+2. Confirm an unpaid pending request. If it asks for another yes, confirm again.
+3. Run [DEMO_QUERIES.sql](docs/DEMO_QUERIES.sql) on the same hosted database. Match the actual order ID, item, amount and pending/unverified status.
+4. Repeat the request. Expect one record with the same ID. Try sold TN-DEMO-002 and check that no request is created for it.
 
-A simulator reference may already exist from a previous recording. Check first and choose a new fictional reference for creation; do not delete evidence. API logs saying Ok are runtime outcomes, not proof of an HTTP success response or a database write.
+Check that the reference has no existing records before testing creation. Reuse it for retries. A log saying Ok does not prove a saved record; inspect SQL. The separate local screenshot-analysis database is not connected to the agent.
 
-## Deploy the PostgreSQL API
+## Deploy
 
-Prerequisites: a Supabase test project, Cloudflare Worker access and Chord exercise access. On a new Supabase project run these full scripts in order in SQL Editor:
+Use a dedicated Supabase test project, Cloudflare account and Chord exercise account. In Supabase SQL Editor, run these complete files in order:
 
-1. api/supabase_01_tables.sql: tables and four base fixtures.
-2. api/supabase_02_operations.sql: the three permitted database operations.
-3. api/supabase_03_checks.sql: database checks whose temporary writes roll back.
-4. api/supabase_04_catalogue.sql: fourteen additional fictional fixtures, including TN-DEMO-105.
+1. api/supabase_01_tables.sql
+2. api/supabase_02_operations.sql
+3. api/supabase_03_checks.sql, which rolls back temporary test writes
+4. api/supabase_04_catalogue.sql
 
-Open Windows PowerShell in this project folder. Set a unique Worker name in wrangler.supabase.toml for your own deployment, then:
+For your own deployment, choose a unique Worker name in wrangler.supabase.toml. In PowerShell, from this folder:
 
 ```powershell
 npx.cmd wrangler@4 login
@@ -44,51 +42,30 @@ npx.cmd wrangler@4 secret put SUPABASE_SECRET_KEY --config wrangler.supabase.tom
 npx.cmd wrangler@4 deploy --config wrangler.supabase.toml
 ```
 
-Enter secrets privately at the prompts. API_TOKEN is a random demo-service bearer secret you generate and reuse in the three Chord connections. SUPABASE_URL is your exact project HTTPS origin. SUPABASE_SECRET_KEY must be a server-side sb_secret_ key, stored only in the Worker; never place it in Chord, the skill, this repo or screenshots. A dedicated fictional-data project limits exposure; this broad server key is not customer authorization.
+Enter secrets privately. API_TOKEN is a random demo-service bearer token; use it in each Chord connection. SUPABASE_URL is the project's exact HTTPS origin. SUPABASE_SECRET_KEY must start sb_secret_ and stays only in Worker secrets. Do not put it in Chord, Git or screenshots.
 
-Set your actual deployed origin in api/openapi.json before importing it into Chord. Configure each operation's Authorization header with Bearer and your API_TOKEN. Publish the supplied skill as the included instructions. See docs/CHORD_SETUP.md for the observed setup and docs/POSTGRES_CONNECTION.md for database details. Do not change a working deployment's API_TOKEN unless you also update its Chord connections.
+Set the deployed origin in api/openapi.json before importing it into Chord. Configure Authorization: Bearer YOUR_API_TOKEN for each tool and publish the skill. Details are in [CHORD_SETUP.md](docs/CHORD_SETUP.md) and [POSTGRES_CONNECTION.md](docs/POSTGRES_CONNECTION.md).
 
-To inspect requests:
+The existing API is https://thrift-nest-demo-api.fuddiebiola.workers.dev . For its code-only update, use the same account/name and run only the deploy command; keep existing remote secrets. **The final resource-handling changes pass local tests but still need deployment and a simulator check.**
 
-```powershell
-npx.cmd wrangler@4 tail --config wrangler.supabase.toml
-```
+## Check the code
 
-GET /health is public liveness only and does not verify database connectivity. A successful authenticated product response marked database_backend=supabase_postgresql establishes that lookup reached the selected backend. Use the SQL record to prove creation.
-
-## Local checks
-
-Node.js >=22.13 with node:sqlite is needed for the legacy tests; the reviewed local run uses Node24. Run:
+Use Node.js >=22.13 with node:sqlite available. The latest local run used Node 24.
 
 ```powershell
 npm.cmd test
 ```
 
-On 29 October 2026, all 17 local tests passed: nine legacy SQLite service tests and eight PostgreSQL Worker adapter tests.
+All 20 local tests pass: nine SQLite service tests and eleven Worker tests using simulated PostgreSQL HTTP responses. The latter cover authentication, request mapping, error handling, oversized streams and response cleanup. Actual hosted SQL checks and simulator results are listed in [ACCEPTANCE.md](docs/ACCEPTANCE.md). Load, sustained memory use, pool saturation and hosted lost-response tests were not run.
 
-The PostgreSQL Worker tests mock HTTP RPC responses, checking authentication, configuration, payload mapping, business errors and uncertain/malformed results. The legacy tests execute SQLite SQL for the earlier D1 implementation. Neither suite substitutes for hosted PostgreSQL checks or a Chord conversation. The candidate ran the database-function checks in Supabase; distributed concurrency and hosted lost-response injection were not tested.
+## Data and resource handling
 
-## Data model and safeguards
+Each product has one item ID. Each pending request is unique by customer/item. Prices are integer kobo with NGN currency, not floating-point amounts. Measurements keep their units; missing values are not zero and unknown stock is not available.
 
-Product grain: one fictional item ID. Order grain: one pending purchase intent per customer/item pair, with a unique constraint. Prices are integer kobo with explicit NGN currency; display naira by dividing by 100. Measurements retain units and basis. Missing measurements are absent, not zero; unknown availability is not available. Source updated_at is not a real-time physical stock guarantee.
+The database locks the customer/item during creation, rechecks price and stock and returns an existing request on retry. The Worker uses HTTP, with no application database pool or growing cache. It limits streamed input/output and clears its upstream timer. Aborted writes remain uncertain until a lookup confirms their outcome. See [RESOURCE_REVIEW.md](docs/RESOURCE_REVIEW.md) for findings, limits and the deployment check.
 
-The PostgreSQL operation serializes the same customer/item using a transaction advisory lock, checks catalogue price and availability under a row share lock, and stores the catalogue amount. Repeated creates return the existing request. Pending intents do not mutate inventory. An uncertain write requires lookup before retry with the same reference. The skill requires a matching retrieval after a successful create before confirming a save. Prompting is not a guarantee of tool-use correctness; the field notes include a false confirmation discovered by SQL verification.
+Current entry point: api/worker_supabase.js with wrangler.supabase.toml. The earlier D1 files are kept for build history and are not used by the PostgreSQL deployment. The skill source is skills/order-assistant/SKILL.md; Chord labels its selected file SKILL (1).md. The owner handover is [GO_LIVE_NOTE.md](docs/GO_LIVE_NOTE.md).
 
-Production needs authenticated customer identity, owner permissions, maintained inventory, payment reconciliation, operational monitoring and tested human escalation. No alert, payment or dispatch integration exists.
+## AI use
 
-## Files and submission
-
-- docs/SUBMISSION.md: submission text with role, links and owner note.
-- docs/FIELD_NOTES.md: observed incidents, evidence and product feedback.
-- docs/GO_LIVE_NOTE.md: owner handover, under half a page in normal formatting.
-- docs/ACCEPTANCE.md: demonstrated, failed and untested behavior.
-- docs/DEMO_QUERIES.sql: independent checks; change the reference consistently.
-- skills/order-assistant/SKILL.md: candidate's latest pasted Chord instructions; Chord UI calls its selected file SKILL (1).md.
-- api/worker_supabase.js and wrangler.supabase.toml: current backend entry point/configuration.
-- api/worker.js, api/schema.sql, wrangler.toml and tests/api.test.js: earlier D1 implementation retained for build history, not used by the final PostgreSQL deployment.
-
-## AI-use disclosure
-
-I used ChatGPT/Codex to help structure discovery, draft the skill, implement and review the API, SQL and tests, inspect screenshots and prepare documentation. I configured the accounts, deployed the service, connected the Chord tools, ran the simulator and database checks, and recorded the demo. Expected behavior and unexecuted tests are separated from observed results.
-
-Documentation used: https://api.chordhq.xyz/docs/ ; https://supabase.com/docs/guides/api ; https://supabase.com/docs/guides/database/dbeaver ; https://developers.cloudflare.com/workers/wrangler/commands/
+ChatGPT/Codex helped with the skill, code, tests, troubleshooting and writing. I configured and deployed the service, connected Chord, ran the conversations and database checks, and recorded the demo. Expected and observed results are documented separately.

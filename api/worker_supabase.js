@@ -8,6 +8,27 @@ function reply(payload, status, id) {
 function fail(code, message, status, id) {
   return reply({ success: false, error: { code, message } }, status, id);
 }
+// Enforce byte limits while reading, including bodies without Content-Length.
+async function limitedText(body, limit) {
+  if (!body) return '';
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0, text = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) return text + decoder.decode();
+      size += value.byteLength;
+      if (size > limit) {
+        await reader.cancel();
+        throw new Error('BODY_TOO_LARGE');
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 export async function handle(request, env, fetcher = fetch) {
   const id = crypto.randomUUID();
   const url = new URL(request.url);
@@ -44,19 +65,33 @@ export async function handle(request, env, fetcher = fetch) {
       if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) {
         return fail('JSON_REQUIRED','Send application/json.',415,id);
       }
-      const raw = await request.text();
-      if (new TextEncoder().encode(raw).length > 2048) return fail('BODY_TOO_LARGE','Request exceeds demo limit.',413,id);
+      let raw;
+      try { raw = await limitedText(request.body, 2048); }
+      catch (error) {
+        if (error.message === 'BODY_TOO_LARGE') return fail('BODY_TOO_LARGE','Request exceeds demo limit.',413,id);
+        throw error;
+      }
       try { payload = JSON.parse(raw); } catch { return fail('INVALID_JSON','Request is not valid JSON.',400,id); }
     } else return fail('ROUTE_NOT_FOUND','No such operation.',404,id);
 
-    const upstream = await fetcher(`${origin.origin}/rest/v1/rpc/tn_demo_operation`, {
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 8000);
+    let result;
+    try {
+      const upstream = await fetcher(`${origin.origin}/rest/v1/rpc/tn_demo_operation`, {
       method: 'POST', headers: { apikey: env.SUPABASE_SECRET_KEY,
         'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ p_operation: operation, p_payload: payload }),
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!upstream.ok) throw new Error('DATABASE_RPC_ERROR');
-    const result = await upstream.json();
+        signal: controller.signal
+      });
+      if (!upstream.ok) {
+        await upstream.body?.cancel();
+        throw new Error('DATABASE_RPC_ERROR');
+      }
+      result = JSON.parse(await limitedText(upstream.body, 16384));
+    } finally {
+      clearTimeout(deadline);
+    }
     const body = result?.payload;
     if (![200,201,400,404,409].includes(result?.http_status) || !body || typeof body.success !== 'boolean') {
       throw new Error('INVALID_DATABASE_RESPONSE');

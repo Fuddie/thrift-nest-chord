@@ -1,9 +1,9 @@
-# Go-live note for Thrift Nest
+# Go live note for Thrift Nest
 
-The assistant answers item-code enquiries using the connected catalogue and records a confirmed, unpaid purchase request. Repeated enquiries can retrieve the existing request. A pending request does not reserve an item: only payment secures it. The current demonstration uses fictional products and customer references and has been checked against hosted PostgreSQL records.
+The assistant answers questions about an item and saves an unpaid purchase request after confirmation. It can find the existing request when a customer asks again. Only payment secures an item; this request does not reserve stock. The demo uses fictional products and customer references.
 
-It does not accept or verify payments, update Instagram, arrange dispatch, send reminders or alert staff automatically. Delivery, returns and missing measurements still need an owner response. The agent has produced an unsupported save confirmation during testing; subsequent checks helped recover, but reliability needs further testing. It also sometimes asks for an extra confirmation.
+It cannot take or verify payments, arrange delivery, update Instagram or alert staff. The extra confirmation prompt and an earlier false save confirmation need further reliability testing before customer use.
 
-Before real customers use it, agree who maintains prices and availability, connect an approved WhatsApp business number, replace fictional references with authenticated customer identity, and define access controls and data retention. Payment integration would require securely stored live provider credentials, verified payment events, and rules for failed or delayed payments, competing buyers and refunds. An unverified or failed payment must never secure stock or trigger dispatch.
+Before launch, someone must maintain prices and stock, connect an approved WhatsApp business number, and set up customer identity and staff permissions. Payment support needs secure live credentials, verified payment events and rules for failed payments, competing buyers and refunds. No verified payment means no reservation or dispatch.
 
-Nominate an owner or staff member to handle unclear requests and service failures, and implement and test an alert to that person; no automated alert exists today. Run a small supervised pilot and reconcile every saved request. Measure owner handling time and errors before and during the pilot before deciding whether the service saves enough effort to justify its cost.
+Choose a staff contact for questions and failures, then build and test alerts to that person. Start with a supervised pilot, check saved requests against the database, and compare handling time and errors before deciding whether it is worth paying for.

@@ -1,41 +1,35 @@
 # Deployment field notes
 
-These are observed incidents, not a list of hypothetical failures. Evidence consists of candidate-supplied screenshots, actual tool responses and database queries reviewed during the build. The assistant did not independently operate the candidate's accounts.
+## A saved request was missing from PostgreSQL
 
-## 1. Agent claimed a save that PostgreSQL did not contain (29 October)
+**What happened:** On 29 October, the agent said DEMO-VIDEO-PG003 / TN-DEMO-105 was saved and quoted TN-d8b1d4ed-8dd9-4a4f-bd1f-1fa8a6bb7d17. Queries by ID and customer/item found no row. A separate Supabase query agreed.
 
-**What happened:** For DEMO-VIDEO-PG003 / TN-DEMO-105, the simulator claimed that a pending request was saved and supplied order ID TN-d8b1d4ed-8dd9-4a4f-bd1f-1fa8a6bb7d17. Queries by customer/item and by the quoted ID returned no rows. A separate Supabase SQL query showed only the two earlier orders.
+**How I investigated:** The agent initially admitted it had not checked again. I enabled Wrangler logs and requested a fresh lookup. A GET /orders appeared and the agent reported no record. I did not capture the original write attempt, so I cannot identify its exact failure.
 
-**How I investigated:** I compared the conversation with DBeaver and Supabase SQL results. When asked to check again, the agent initially admitted: “I haven't run a fresh check for this message.” I enabled Wrangler tail and explicitly requested get_pending_order. A GET /orders for the correct pair appeared in the log; the agent then reported no matching order and retracted the earlier confirmation. The original creation attempt was not captured in the live tail, so its exact tool-use or platform failure cannot be established.
+**What I changed:** I required a successful create response followed by a matching lookup. Retrying the same pair produced POST and GET logs and a real row, TN-e4500274-f7d9-458f-a591-09aa232fab97, at NGN 13,200, pending/unverified. Later PG005 also matched SQL. Recovery worked; I do not claim the instruction change prevents every false confirmation.
 
-**Fix/workaround and observed result:** I required a successful create response followed by a matching get_pending_order result before saying saved. Retrying the same original pair produced POST /orders and GET /orders logs and a real PostgreSQL record: TN-e4500274-f7d9-458f-a591-09aa232fab97, NGN 13,200, pending/unverified. Later PG005 also had a matching database row and POST/GET logs. This demonstrates recovery and subsequent successful runs, not that prompting eliminates false confirmations.
+**What Chord could improve:** Link every saved-order claim to the actual tool result. Show the request ID, sanitized arguments, response, HTTP status and skill version in one place.
 
-**Product improvement:** Show each customer turn's actual tool calls, sanitized arguments, HTTP status, response, request ID and skill version together. Offer a write-confirmation gate requiring a successful tool result before a saved-state claim. This incident establishes an unsupported confirmation, not which Chord subsystem caused it.
+## Manual requests worked but agent requests failed
 
-## 2. Manual POST worked while the agent's request failed (27 October, earlier D1 backend)
+**What happened:** On 27 October, with the earlier D1 backend, agent requests returned HTTP 400, INVALID_BODY and UNEXPECTED_FIELD. Lookup and SQL showed no order.
 
-**What happened:** Agent create attempts returned HTTP 400 with INVALID_BODY and UNEXPECTED_FIELD. Reconciliation returned found:false and a remote database query found no order.
+**How I investigated:** A manual Chord request with all four required fields returned 201 Created. My first skill signature listed only two fields. The failed request body was not captured, so the exact malformed field remains unknown.
 
-**How I investigated:** I inspected the required four-field body schema and tested it manually in Chord. customer_ref, item_id, expected_price_minor=850000 and customer_confirmed=true returned 201 Created. Our initial skill signature documented only two of those arguments. The exact failed HTTP body was not captured, so I cannot prove which field caused each error.
+**What I changed:** I documented all four fields, correct JSON types and prices in kobo, keeping strict backend validation. Later agent writes matched external records. These were D1 checks, before the PostgreSQL migration.
 
-**Fix/workaround and observed result:** I aligned the skill with all four fields, exact JSON types and integer kobo units, retaining strict backend validation. Subsequent agent and simulator writes matched external D1 records. The final integration uses PostgreSQL; this earlier evidence is not being presented as a PostgreSQL test.
+**What Chord could improve:** Generate an example from the tool schema and show sanitized submitted fields beside validation errors. I also need to keep the skill and API contract aligned.
 
-**Product improvement:** Provide a schema-generated request example and display sanitized actual request keys/types next to validation errors. My implementation improvement is to keep the skill, OpenAPI contract and backend requirements aligned.
+## The simulator stopped before answering
 
-## 3. Simulator failed to deliver a product answer despite API requests (29 October)
+**What happened:** On 29 October, PG008 displayed “The agent didn't answer. Try sending again.” Chord showed retry messages without the product answer.
 
-**What happened:** During a recording attempt for DEMO-VIDEO-PG008, the simulator displayed “The agent didn't answer. Try sending again.” The main Chord conversation showed “I'll try that again” and “Retrying the lookup,” without a product answer.
+**How I investigated:** Wrangler recorded four product GETs between 16:33 and 16:37 Lagos time. Each said Ok, which does not prove the HTTP response was successful. The Activity panel showed usage/setup events, and I did not obtain the failed response body.
 
-**How I investigated:** Live Wrangler logs showed GET /products/TN-DEMO-105 at 16:33:54, 16:36:42, 16:37:13 and 16:37:44 Lagos time. Each event said Ok. That proves the requests reached the Worker and completed without an uncaught runtime exception; it does not establish the HTTP business response. Chord's Activity panel showed usage and setup events rather than the requested per-call payload. We did not obtain the failed turn's response body or a definitive cause.
+**Workaround and limitation:** I stopped repeated retries and looked for more detailed logs. I later completed the recording, but no specific fix or root cause was established. This remains unresolved.
 
-**Fix/workaround and limitation:** Paused repeated retries and attempted to locate per-turn diagnostics. The candidate later reported completing a recording, but no specific corrective action or root cause was established. The original no-answer incident remains unresolved; later completion is not evidence of a particular fix.
+**What Chord could improve:** Put a run ID and diagnostic link on simulator errors, distinguishing API errors, model timeouts and delivery failures.
 
-**Product improvement:** Give simulator failures a copyable run/request ID and a direct link to sanitized tool and model errors. Distinguish tool HTTP failure, model timeout and channel delivery failure, and make per-turn diagnostics discoverable from the conversation.
+## Other limits
 
-## Remaining usability limitation
-
-The agent repeatedly asked for a second yes after the customer had already confirmed a quoted unpaid request. I first appended a rule, then rewrote conversation steps 6–8 and checked that v8 displayed SKILL (1).md as Instructions. The extra question persisted in observed tests. A redundant confirmation instruction was a plausible contributor, but published-version/session behavior and model adherence were not isolated. The working two-confirmation flow was retained for the demo; no one-confirmation fix is claimed. A channel preview and visible per-turn skill version would help diagnose this.
-
-## Supporting configuration notes
-
-The PostgreSQL migration initially returned NOT_CONFIGURED / “Invalid database API origin.” After correcting the project URL it returned “Use the server-side Supabase secret API key.” Correcting the server-side key format to sb_secret_ produced a successful product response marked database_backend=supabase_postgresql. No key values were included in the submitted code. DBeaver initially queried the separate localhost learning database; switching the SQL editor to the hosted Thrift Nest connection returned the expected record. Windows PowerShell blocked npx.ps1; npx.cmd allowed deployment without changing execution policy. These are configuration/environment issues, not established Chord defects.
+The agent still sometimes asks for a second yes. Rewriting the confirmation steps and checking published v8 did not establish a fix, so I kept the working two-confirmation flow. The owner described the wider problem, but I did not establish a dated incident, handling-time baseline or measured sales impact.
