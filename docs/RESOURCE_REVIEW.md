@@ -18,15 +18,17 @@ The cap bounds retained body data, not total isolate memory or all concurrent re
 
 A transaction-level advisory lock serializes creates for the same customer/item. The unique constraint is the final duplicate guard. A row share lock holds the checked product stable until the transaction completes. Locks end with the transaction; no session-level lock is used. We did not verify the hosted statement/lock timeout settings. Aborting an HTTP request does not prove PostgreSQL cancelled or rolled back a write, so reconcile by the original customer/item before retrying. No automatic write retry is added to the Worker.
 
-## Deployment status and final check
+## Deployment and final check
 
-The resource changes were added to the submitted source after the recorded demo. They are not yet deployed to my Worker. Extract the latest ZIP to a new folder, open PowerShell in its thrift-nest folder and run:
+Deployed on 29 October 2026, Worker version f0c53f51-aee5-4e14-8cb5-bcb511423818. The screenshot showed the updated limitedText and clearTimeout source and a successful deployment from that folder.
+
+A new simulator request for DEMO-FINAL-010 / TN-DEMO-105 produced a PostgreSQL row at NGN 13,200, pending. The agent initially gave an uncertain explanation about an empty check and intended retry. A subsequent retrieval reply returned the matching order details. No failed API response or retry was captured for that exchange, so the agent's account does not establish the cause. Payment was described as unverified; the SQL screenshot's payment column was outside the visible area.
+
+This confirms deployment and a saved request after the code change, not a hosted memory, load or pool-saturation test. No further database migration or credential change was required. For future code-only deployment from this project folder:
 
 ```powershell
 npx.cmd wrangler@4 deploy --config wrangler.supabase.toml
 ```
-
-Use the SAME Cloudflare account and existing Worker name; existing remote secrets are retained. No database migration or new credentials are needed for this code-only change. Check deployment succeeds, then perform one product lookup and one confirmed request with a fresh fictional reference. Verify the order independently using docs/DEMO_QUERIES.sql. Until then, record this update as local-tested, deployment pending.
 
 Before real customers use this service, add monitoring for Worker memory errors and latency, database connections and blocked transactions, plus service rate limits and human escalation. Hosted stress/concurrency tests and lost-response injection remain untested.
 

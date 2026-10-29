@@ -33,3 +33,5 @@
 ## Other limits
 
 The agent still sometimes asks for a second yes. Rewriting the confirmation steps and checking published v8 did not establish a fix, so I kept the working two-confirmation flow. The owner described the wider problem, but I did not establish a dated incident, handling-time baseline or measured sales impact.
+
+After the final code deployment, DEMO-FINAL-010 was present in PostgreSQL at NGN 13,200, pending. The agent first described an empty check and an intended retry, then later returned the saved request details. I did not capture evidence of that claimed empty API response or retry. This is another reason to verify the database rather than rely on the agent's explanation.

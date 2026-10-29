@@ -46,7 +46,7 @@ Enter secrets privately. API_TOKEN is a random demo-service bearer token; use it
 
 Set the deployed origin in api/openapi.json before importing it into Chord. Configure Authorization: Bearer YOUR_API_TOKEN for each tool and publish the skill. Details are in [CHORD_SETUP.md](docs/CHORD_SETUP.md) and [POSTGRES_CONNECTION.md](docs/POSTGRES_CONNECTION.md).
 
-The existing API is https://thrift-nest-demo-api.fuddiebiola.workers.dev . For its code-only update, use the same account/name and run only the deploy command; keep existing remote secrets. **The final resource-handling changes pass local tests but still need deployment and a simulator check.**
+The existing API is https://thrift-nest-demo-api.fuddiebiola.workers.dev . For its code-only update, use the same account/name and run only the deploy command; keep existing remote secrets. **The final resource-handling changes were deployed on 29 October.** A fresh DEMO-FINAL-010 request was visible in PostgreSQL, and a later simulator reply returned its matching ID. The agent still gave a misleading explanation of its earlier checks; see the acceptance notes.
 
 ## Check the code
 

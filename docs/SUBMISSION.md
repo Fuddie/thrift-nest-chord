@@ -74,4 +74,4 @@ Choose a staff contact for questions and failures, then build and test alerts to
 
 The local suite passes 20 tests: nine for the earlier SQLite service and eleven for the PostgreSQL Worker using simulated HTTP responses. Hosted SQL checks and specific simulator runs are recorded in docs/ACCEPTANCE.md. These tests do not establish production reliability or measured business impact.
 
-A final code review added limits while reading request and response bodies and cleanup of unused responses and timers. This update is tested locally but still needs deployment and a fresh simulator check. See docs/RESOURCE_REVIEW.md. No long-running memory profile, hosted load test or connection-pool saturation test was run.
+The final code review added limits on request and response sizes and cleanup of unused responses and timers. The update is deployed. PostgreSQL confirms DEMO-FINAL-010 at NGN 13,200, pending; a later reply returned its ID. The agent's account of its earlier checks was inconsistent. No sustained memory, hosted load or pool-saturation test was run. See docs/RESOURCE_REVIEW.md.
