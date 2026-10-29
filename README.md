@@ -2,13 +2,13 @@
 
 **Role preference: Analytics Engineering**
 
-Thrift Nest is an online thrift clothing business selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
+Thrift Nest is an online thrift clothing business owned by a friend of mine, selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
 
 ## Demo and scope
 
 - Agent: Thrift Nest Order Assistant; latest inspected skill v8 on 29 October 2026.
 - Simulator: https://chat.tsglabs.dev/c/TjEWRNfXvhPO0UxU3kzbeZLI
-- Recording: https://www.loom.com/share/89e1cb51fbf0497f83a175566152e6bb
+- Recording: https://www.loom.com/share/fb9b9580a6564d639bbef2b03889834c
 - API: https://thrift-nest-demo-api.fuddiebiola.workers.dev
 - Final backend: Supabase PostgreSQL, queried independently through Supabase SQL Editor and DBeaver.
 

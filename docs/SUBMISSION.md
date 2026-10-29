@@ -1,6 +1,6 @@
 # Role preference: Analytics Engineering
 
-Thrift Nest is an online thrift clothing business selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
+Thrift Nest is an online thrift clothing business owned by a friend of mine, selling through Instagram and WhatsApp. Its owner reports repeated product questions and purchase requests scattered across chat histories; this Chord agent retrieves catalogue details and records one confirmed, unpaid pending request in PostgreSQL. A reliable shared record could reduce repeated administrative work and missed follow-ups, which the owner identified as reasons to consider paying, although savings and willingness to pay have not been quantified. I deliberately excluded payments, stock reservation, Instagram synchronisation, delivery automation and outbound reminders.
 
 ## Working agent
 
@@ -18,7 +18,7 @@ Includes the skill, custom Worker API, PostgreSQL schema and operations, fiction
 
 ## Screen recording
 
-https://www.loom.com/share/89e1cb51fbf0497f83a175566152e6bb
+https://www.loom.com/share/fb9b9580a6564d639bbef2b03889834c
 
 
 
