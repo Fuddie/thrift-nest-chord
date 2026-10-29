@@ -1,0 +1,8 @@
+name = "thrift-nest-demo-api"
+main = "api/worker_supabase.js"
+compatibility_date = "2026-10-20"
+workers_dev = true
+
+# Existing API_TOKEN remains in this same Worker's secrets.
+# Set SUPABASE_URL and SUPABASE_SECRET_KEY using Wrangler secret put.
+# This configuration deliberately has no D1 binding and no fallback.

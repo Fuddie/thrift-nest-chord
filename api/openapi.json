@@ -1,0 +1,180 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Thrift Nest Demo API",
+    "version": "0.1.0",
+    "description": "Fictional catalogue and persistent pending orders. No payments or reservations."
+  },
+  "servers": [
+    {
+      "url": "https://thrift-nest-demo-api.fuddiebiola.workers.dev"
+    }
+  ],
+  "security": [
+    {
+      "demoBearer": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "demoBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "paths": {
+    "/products/{item_id}": {
+      "get": {
+        "operationId": "lookup_product",
+        "summary": "Retrieve recorded fictional product details",
+        "description": "Use for size, measurements, NGN price and availability. Missing measurements are unknown. price_minor is integer kobo.",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^TN-DEMO-[0-9]{3}$"
+            },
+            "description": "Fictional catalogue code such as TN-DEMO-001."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; inspect success, found and order fields."
+          },
+          "400": {
+            "description": "Invalid input or missing customer confirmation."
+          },
+          "401": {
+            "description": "Invalid demo service credential."
+          },
+          "404": {
+            "description": "Unknown item or route."
+          },
+          "409": {
+            "description": "Item unavailable or quoted price changed; do not claim success."
+          },
+          "503": {
+            "description": "Outcome unverified. Reconcile before retrying."
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "operationId": "get_pending_order",
+        "summary": "Retrieve or reconcile a pending order",
+        "description": "Use before retrying uncertain writes or for repeated requests. Only found=false in a successful result proves absence.",
+        "parameters": [
+          {
+            "name": "customer_ref",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fictional reference such as DEMO-ADA."
+          },
+          {
+            "name": "item_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fictional item code such as TN-DEMO-001."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation; inspect success, found and order fields."
+          },
+          "400": {
+            "description": "Invalid input or missing customer confirmation."
+          },
+          "401": {
+            "description": "Invalid demo service credential."
+          },
+          "404": {
+            "description": "Unknown item or route."
+          },
+          "409": {
+            "description": "Item unavailable or quoted price changed; do not claim success."
+          },
+          "503": {
+            "description": "Outcome unverified. Reconcile before retrying."
+          }
+        }
+      },
+      "post": {
+        "operationId": "create_pending_order",
+        "summary": "Record one confirmed unpaid pending request",
+        "description": "Call only after explicit customer confirmation. Pass the lookup price_minor as expected_price_minor and customer_confirmed=true. Does not reserve stock or prove payment. Repeated customer/item requests return the same order. PRICE_CHANGED requires lookup and renewed customer confirmation; uncertain results require get_pending_order.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "customer_ref",
+                  "item_id",
+                  "expected_price_minor",
+                  "customer_confirmed"
+                ],
+                "properties": {
+                  "customer_ref": {
+                    "type": "string",
+                    "pattern": "^DEMO-[A-Z0-9-]{1,32}$",
+                    "description": "Fictional demo customer reference. Reuse exactly for retries."
+                  },
+                  "item_id": {
+                    "type": "string",
+                    "pattern": "^TN-DEMO-[0-9]{3}$",
+                    "description": "Exact catalogue item code."
+                  },
+                  "expected_price_minor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "price_minor returned by lookup_product, in kobo. Do not pass the displayed naira amount."
+                  },
+                  "customer_confirmed": {
+                    "type": "boolean",
+                    "description": "Set true only after the customer explicitly confirms the quoted unpaid pending request. The backend rejects false."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation; inspect success, found and order fields."
+          },
+          "400": {
+            "description": "Invalid input or missing customer confirmation."
+          },
+          "401": {
+            "description": "Invalid demo service credential."
+          },
+          "404": {
+            "description": "Unknown item or route."
+          },
+          "409": {
+            "description": "Item unavailable or quoted price changed; do not claim success."
+          },
+          "503": {
+            "description": "Outcome unverified. Reconcile before retrying."
+          },
+          "201": {
+            "description": "New pending order saved; actual order ID returned."
+          }
+        }
+      }
+    }
+  }
+}

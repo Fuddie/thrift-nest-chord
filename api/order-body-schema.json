@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["customer_ref", "item_id", "expected_price_minor", "customer_confirmed"],
+  "properties": {
+    "customer_ref": { "type": "string", "pattern": "^DEMO-[A-Z0-9-]{1,32}$", "description": "Fictional demo customer reference. Reuse exactly for retries." },
+    "item_id": { "type": "string", "pattern": "^TN-DEMO-[0-9]{3}$", "description": "Exact catalogue item code." },
+    "expected_price_minor": { "type": "integer", "minimum": 1, "description": "price_minor returned by lookup_product, in kobo. Do not pass the displayed naira amount." },
+    "customer_confirmed": { "type": "boolean", "description": "Set true only after the customer explicitly confirms the quoted unpaid pending request. The backend rejects false." }
+  }
+}

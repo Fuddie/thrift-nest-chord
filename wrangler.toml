@@ -1,0 +1,9 @@
+name = "thrift-nest-demo-api"
+main = "api/worker.js"
+compatibility_date = "2026-10-20"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "thrift-nest-demo"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
